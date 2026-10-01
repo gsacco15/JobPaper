@@ -33,7 +33,7 @@
     "zod": "^4.4.3"
   },
   "scripts": {
-    "build:app": "vite build && node scripts/gen-assets.mjs",
+    "build:app": "vite build && vite build --config vite.download.config.ts && node scripts/gen-assets.mjs",
     "build:server": "esbuild src/server/node.ts --bundle --platform=node --format=esm --target=node22 --outfile=dist/server.mjs --banner:js=\"import{createRequire}from'module';const require=createRequire(import.meta.url);\"",
     "build": "npm run build:app && npm run build:server",
     "start": "node dist/server.mjs",

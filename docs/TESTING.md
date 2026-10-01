@@ -26,6 +26,9 @@ Prep: `npm run dev` plus a tunnel, connector added, settings cleared.
 
 ## 4. PDF and text
 - [ ] Download PDF → file saves (iOS Files / Android Downloads / desktop). It opens with logo, table, totals, deposit, approval line, page numbers.
+- [ ] If the host rejects or does not support downloads, the panel says it was not saved and offers Open PDF in browser. Open it → Save PDF downloads the same file outside the panel.
+- [ ] If opening the browser is blocked, Copy PDF link provides a link that can be pasted into a browser. Editing the document clears the previous link; Download PDF prepares a new one.
+- [ ] The browser page removes the document fragment from the address bar after loading. An invalid or incomplete link shows an error and no Save PDF button.
 - [ ] Copy as text → paste into Messages: title, lines, total, deposit, phone.
 - [ ] Input → sendable PDF in ≤3 taps: Open → Download PDF (or PDF on the inline card).
 
@@ -51,7 +54,7 @@ Prep: `npm run dev` plus a tunnel, connector added, settings cleared.
 ## 8. Error states
 - [ ] "write up an estimate" (no description) → exactly one question: what's the job?
 - [ ] "make a change order" with no estimate in the chat → one question: which estimate?
-- [ ] Airplane mode mid-edit → the panel stays usable; PDF still works offline.
+- [ ] Airplane mode mid-edit → the panel stays usable; PDF generation and supported host downloads work offline. The browser fallback needs a connection to load the download page.
 
 ## 9. Sidebar and thread tab
 - [ ] Sidebar → JobPaper opens fullscreen home: tabs, Write it up sends to the chat; Open a saved file works; recent docs list (if storage is allowed).

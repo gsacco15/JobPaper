@@ -49,6 +49,10 @@ beforeAll(async () => {
       res.setHeader("content-type", "text/javascript");
       return res.end(hostJs);
     }
+    if (req.url?.startsWith("/download")) {
+      res.setHeader("content-type", "text/html");
+      return res.end(readFileSync(new URL("../dist/download/index.html", import.meta.url), "utf8"));
+    }
     res.setHeader("content-type", "text/html");
     res.end(`<!doctype html><html><body><script type="module" src="/host.js"></script></body></html>`);
   });
@@ -62,11 +66,11 @@ afterAll(async () => {
   await new Promise((r) => (server ? server.close(r) : r(null)));
 });
 
-async function openHost(): Promise<Page> {
+async function openHost(download = "", openlink = ""): Promise<Page> {
   const page = await browser.newPage();
   page.on("pageerror", (e) => console.error("page error:", e.message));
   if (process.env.E2E_DEBUG) page.on("console", (m) => console.log("console:", m.text()));
-  await page.goto(`${base}/?subject=v1/${Math.random()}`);
+  await page.goto(`${base}/?subject=v1/${Math.random()}&download=${download}&openlink=${openlink}`);
   await page.waitForFunction(() => (window as any).__host?.ready, null, { timeout: 15_000 });
   return page;
 }
@@ -122,7 +126,80 @@ describe.skipIf(!hasPanel)("panel in a host", () => {
     expect(dl.resource.mimeType).toBe("application/pdf");
     expect(dl.resource.uri).toContain("Bathroom%20remodel%20-%20Henderson.pdf");
     expect(Buffer.from(dl.resource.blob, "base64").subarray(0, 5).toString()).toBe("%PDF-");
-    await f.getByText("PDF ready").waitFor();
+    await f.getByText("PDF sent for download", { exact: true }).waitFor();
+    await page.close();
+  }, 30_000);
+
+  for (const mode of ["unsupported", "rejected", "throws"]) it(`offers a working browser PDF when the host download is ${mode}`, async () => {
+    const page = await openHost(mode);
+    await page.evaluate((a) => (window as any).__host.runTool("create_estimate", a, "fullscreen"), ESTIMATE_ARGS);
+    const f = panel(page);
+    await f.getByRole("button", { name: "Download PDF", exact: true }).click();
+    const open = f.getByRole("button", { name: "Open PDF in browser", exact: true });
+    await open.waitFor();
+    expect(await f.getByText("PDF ready", { exact: true }).count()).toBe(0);
+    expect(await f.getByText("PDF sent for download", { exact: true }).count()).toBe(0);
+    if (mode === "unsupported") expect(await log(page, "ui/download-file")).toHaveLength(0);
+    await open.click();
+    await page.waitForFunction(() => (window as any).__host.log.some((e: any) => e.method === "ui/open-link"));
+    const url = new URL((await log(page, "ui/open-link")).at(-1).params.url);
+    expect(url.origin).toBe("https://jobpaperapp.com");
+    expect(url.pathname).toBe("/download");
+    expect(url.search).toBe("");
+    const external = await browser.newPage();
+    await external.goto(`${base}/download${url.hash}`);
+    expect(new URL(external.url()).hash).toBe("");
+    const save = external.getByRole("link", { name: "Save PDF", exact: true });
+    await save.waitFor();
+    const received = external.waitForEvent("download");
+    await save.click();
+    const downloaded = await received;
+    expect(downloaded.suggestedFilename()).toBe("Bathroom remodel - Henderson.pdf");
+    const bytes = readFileSync((await downloaded.path())!);
+    expect(bytes.subarray(0, 5).toString()).toBe("%PDF-");
+    if (mode !== "unsupported") expect(bytes.toString("base64")).toBe((await log(page, "ui/download-file"))[0].params.contents[0].resource.blob);
+    await f.getByRole("button", { name: /^New tile floor/ }).click();
+    await f.getByLabel("Quantity").fill("55");
+    await f.getByRole("button", { name: "Done", exact: true }).click();
+    expect(await open.count()).toBe(0);
+    await external.close();
+    await page.close();
+  }, 30_000);
+
+  it("shows an error instead of a Save link for a missing or corrupt browser PDF", async () => {
+    const page = await browser.newPage();
+    for (const fragment of ["", "#pdf=broken"]) {
+      await page.goto(`${base}/download${fragment}`);
+      await page.waitForFunction(() => document.getElementById("status")?.textContent !== "Preparing your download…");
+      expect(await page.getByRole("link", { name: "Save PDF", exact: true }).count()).toBe(0);
+    }
+    await page.close();
+  });
+
+  it("retains a copyable link if the host cannot open the browser", async () => {
+    const page = await openHost("rejected", "denied");
+    await page.evaluate((a) => (window as any).__host.runTool("create_estimate", a, "fullscreen"), ESTIMATE_ARGS);
+    const f = panel(page);
+    await f.getByRole("button", { name: "Download PDF", exact: true }).click();
+    await f.getByRole("button", { name: "Open PDF in browser", exact: true }).click();
+    await f.getByText("Couldn’t open the browser. Copy the PDF link below and paste it into your browser.", { exact: true }).waitFor();
+    await f.getByText("Copy PDF link", { exact: true }).click();
+    expect(await f.getByLabel("PDF download link").inputValue()).toMatch(/^https:\/\/jobpaperapp\.com\/download#pdf=/);
+    await page.close();
+  }, 30_000);
+
+  it("does not offer an outdated PDF if the document changes during download", async () => {
+    const page = await openHost("delayed");
+    await page.evaluate((a) => (window as any).__host.runTool("create_estimate", a, "fullscreen"), ESTIMATE_ARGS);
+    const f = panel(page);
+    await f.getByRole("button", { name: "Download PDF", exact: true }).click();
+    await page.waitForFunction(() => (window as any).__host.log.some((e: any) => e.method === "ui/download-file"));
+    await f.getByRole("button", { name: /^New tile floor/ }).click();
+    await f.getByLabel("Quantity").fill("55");
+    await f.getByRole("button", { name: "Done", exact: true }).click();
+    await page.evaluate(() => (window as any).__host.finishDownload());
+    await f.getByText("The document changed while preparing the PDF. Tap Download PDF again.", { exact: true }).waitFor();
+    expect(await f.getByRole("button", { name: "Open PDF in browser", exact: true }).count()).toBe(0);
     await page.close();
   }, 30_000);
 

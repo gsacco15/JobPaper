@@ -7,3 +7,4 @@ dist/
 *.log
 coverage/
 test-results/
+public/download.html

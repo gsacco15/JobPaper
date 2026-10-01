@@ -1,8 +1,10 @@
 // Embeds the built panel and icon into src/generated/assets.ts so the server
 // is one self-contained bundle (no file reads at runtime — serverless friendly).
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { copyFileSync, existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 
 const root = new URL("..", import.meta.url);
+const downloadPath = new URL("dist/download/index.html", root);
+if (existsSync(downloadPath)) copyFileSync(downloadPath, new URL("public/download.html", root));
 const panelPath = new URL("dist/app/index.html", root);
 const html = existsSync(panelPath)
   ? readFileSync(panelPath, "utf8")
