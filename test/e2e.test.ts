@@ -148,6 +148,8 @@ describe.skipIf(!hasPanel)("panel in a host", () => {
     expect(url.pathname).toBe("/download");
     expect(url.search).toBe("");
     const external = await browser.newPage();
+    const downloads: string[] = [];
+    external.on("download", (download) => downloads.push(download.suggestedFilename()));
     const received = external.waitForEvent("download");
     await external.goto(`${base}/download${url.hash}`);
     expect(new URL(external.url()).hash).toBe("");
@@ -156,6 +158,7 @@ describe.skipIf(!hasPanel)("panel in a host", () => {
     const downloaded = await received;
     expect(downloaded.suggestedFilename()).toBe("Bathroom remodel - Henderson.pdf");
     const bytes = readFileSync((await downloaded.path())!);
+    expect(downloads).toEqual(["Bathroom remodel - Henderson.pdf"]);
     expect(bytes.subarray(0, 5).toString()).toBe("%PDF-");
     if (mode !== "unsupported") expect(bytes.toString("base64")).toBe((await log(page, "ui/download-file"))[0].params.contents[0].resource.blob);
     await f.getByRole("button", { name: /^New tile floor/ }).click();

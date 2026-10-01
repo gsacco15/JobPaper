@@ -13,9 +13,8 @@ try {
   save.hidden = false;
   status.textContent = name;
   document.getElementById("help")!.hidden = false;
-  const preview = document.getElementById("preview") as HTMLIFrameElement;
-  preview.src = url;
-  preview.hidden = false;
+  // Do not embed the PDF here: browsers without a PDF viewer may download
+  // that embed too, using the blob's random name instead of our filename.
   // Try once after painting the page. Browser policy may require the user to
   // tap Save PDF; leave that link visible and never claim the file was saved.
   requestAnimationFrame(() => save.click());
