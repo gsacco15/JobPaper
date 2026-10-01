@@ -374,7 +374,32 @@ export function createJobPaperServer(opts: JobPaperServerOptions): McpServer {
 
   // ---- Settings (plugin settings extension) --------------------------------
 
-  createSettings(server).register({
+  // The settings helper derives schemas and capabilities, but does not accept
+  // tool descriptions or complete annotations. Add them through registerTool
+  // while retaining the helper's validation and per-request handlers.
+  const settingsServer = new Proxy(server, {
+    get(target, property, receiver) {
+      if (property !== "registerTool") return Reflect.get(target, property, receiver);
+      const registerTool: McpServer["registerTool"] = (name, config, callback) => {
+        const isRead = name === "settings.read";
+        return target.registerTool(name, {
+          ...config,
+          description: isRead
+            ? "Read the connected user's business name, contact details, default markup, tax, and payment terms."
+            : "Save only supplied business settings for the connected user, preserving unspecified values.",
+          annotations: {
+            ...config.annotations,
+            readOnlyHint: isRead,
+            destructiveHint: false,
+            openWorldHint: false,
+            idempotentHint: true,
+          },
+        }, callback);
+      };
+      return registerTool;
+    },
+  });
+  createSettings(settingsServer).register({
     fields: {
       business_name: { schema: z.string().max(120), title: "Business name" },
       phone: { schema: z.string().max(40), title: "Phone" },
@@ -444,6 +469,7 @@ export function createJobPaperServer(opts: JobPaperServerOptions): McpServer {
     "save_logo",
     {
       title: "Save logo",
+      description: "Save or clear the logo printed on the connected user's JobPaper PDFs.",
       inputSchema: z.object({ logo_data_url: z.string().max(MAX_LOGO_DATA_URL_LENGTH) }),
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false, idempotentHint: true },
       _meta: { ui: { visibility: ["app"] } },
@@ -462,6 +488,7 @@ export function createJobPaperServer(opts: JobPaperServerOptions): McpServer {
     "get_settings",
     {
       title: "Get business settings",
+      description: "Read the connected user's business settings and PDF logo for the JobPaper panel.",
       inputSchema: z.object({}),
       annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
       _meta: { ui: { visibility: ["app"] } },
