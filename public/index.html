@@ -38,7 +38,7 @@
       <h1><span class="nowrap">Your notes in.</span><br><span class="mark">A PDF out.</span></h1>
       <p class="lede">Tell ChatGPT about the job. JobPaper turns it into a clean, professional <strong>estimate</strong>, <strong>change order</strong>, or <strong>job report</strong> — with your name, your numbers, and the math done right. Tap to fix anything, then send the PDF.</p>
       <div class="cta-row">
-        <a class="btn btn-primary" href="#get">Get JobPaper — it’s free</a>
+        <a class="btn btn-primary" id="hero-cta" href="#get">Get JobPaper — it’s free</a>
         <a class="btn btn-ghost" href="#how">See how it works →</a>
       </div>
       <ul class="proof">
@@ -193,7 +193,7 @@
   </div>
 </section>
 
-<section id="get" class="section">
+<section id="get" class="section get-section">
   <div class="wrap get">
     <p class="kicker">Get started</p>
     <h2>Set up in two minutes.</h2>
@@ -237,5 +237,20 @@
 
 <div class="mobile-cta"><a class="btn btn-primary" href="#get">Get JobPaper — free</a></div>
 
+<script>
+  // Show the sticky phone button only once the hero button has scrolled away,
+  // and hide it again over the setup section and final call to action.
+  (function () {
+    var bar = document.querySelector(".mobile-cta");
+    if (!bar || !("IntersectionObserver" in window)) return;
+    var visible = new Set();
+    var targets = [document.getElementById("hero-cta"), document.querySelector(".get-section"), document.querySelector(".final")];
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { e.isIntersecting ? visible.add(e.target) : visible.delete(e.target); });
+      bar.classList.toggle("show", visible.size === 0);
+    });
+    targets.forEach(function (t) { if (t) io.observe(t); });
+  })();
+</script>
 </body>
 </html>
