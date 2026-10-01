@@ -1,0 +1,7 @@
+# Cloudflare Workers deploy (optional — Vercel is the default).
+#   npm run build:app && npx wrangler deploy
+# Set secrets: npx wrangler secret put KV_REST_API_URL / KV_REST_API_TOKEN
+name = "jobpaper"
+main = "src/server/worker.ts"
+compatibility_date = "2026-09-01"
+compatibility_flags = ["nodejs_compat"]

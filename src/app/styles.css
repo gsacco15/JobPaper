@@ -1,0 +1,73 @@
+@import "tailwindcss";
+@import "@openai/mcp-extensions/app/styles.css";
+
+/* Colors come only from the host (light/dark); no brand colors of our own. */
+@theme inline {
+  --color-bg: var(--background);
+  --color-fg: var(--foreground);
+  --color-muted: var(--muted-foreground);
+  --color-card: var(--card);
+  --color-line: var(--border);
+  --color-input: var(--input);
+  --color-accent: var(--primary);
+  --color-accent-soft: var(--accent);
+  --color-warn: var(--destructive);
+  --color-subtle: var(--muted);
+  --radius-panel: var(--radius);
+}
+
+@layer base {
+  html,
+  body {
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: contain;
+  }
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+    color: inherit;
+  }
+  /* iOS zooms inputs under 16px; keep editing comfortable on phones. */
+  input,
+  textarea,
+  select {
+    font-size: max(16px, 1em);
+  }
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .tap {
+    min-height: 44px;
+    min-width: 44px;
+    cursor: var(--cursor-interaction, pointer);
+  }
+  .field {
+    width: 100%;
+    border: 1px solid var(--input);
+    border-radius: 10px;
+    background: var(--background);
+    padding: 8px 10px;
+    min-height: 44px;
+  }
+  .label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
