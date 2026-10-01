@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "jobpaper": {
+      "type": "http",
+      "url": "https://jobpaper.app/mcp"
+    }
+  }
+}

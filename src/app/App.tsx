@@ -142,8 +142,9 @@ export function App({ bridge, initial }: { bridge: Bridge; initial?: { screen?: 
       if (s) setSettings(s);
 
       if (result.isError) {
-        // The model is asked to fix its input and call again; nothing to show yet.
-        setScreen({ kind: "loading", label: "Drafting…" });
+        // The model was asked to fix its input and call again; the finished
+        // document arrives in a new panel.
+        setScreen({ kind: "error", message: "ChatGPT is filling in a few details first — the finished document will show up right after this." });
         return;
       }
       if (sc.document && sc.view !== "file") {
@@ -378,7 +379,7 @@ export function App({ bridge, initial }: { bridge: Bridge; initial?: { screen?: 
       body = (
         <Home
           recent={recent}
-          canSend={!!host?.connected}
+          canSend={!host || host.connected}
           onStart={async (prompt) => {
             if (await host?.sendMessage(prompt)) show("Writing it up in the chat…");
             else show("Couldn’t reach the chat. Type it there instead.");
