@@ -14,11 +14,12 @@ import {
 import { normalizeDocument, parseDocumentText } from "../shared/normalize.js";
 import { completeSettings, type BusinessSettings } from "../shared/settings.js";
 import { modelSummary, toSmsText } from "../shared/text.js";
+import { pdfDownloadUrl } from "../shared/pdf-download.js";
 import { recompute } from "../shared/totals.js";
 import type { Bridge } from "./bridge.js";
 import { DocumentPanel } from "./DocumentPanel.js";
 import { contentText, parseFileInput } from "./host.js";
-import { pdfBase64, pdfBlob } from "./pdf.js";
+import { pdfBase64 } from "./pdf.js";
 import { allPhotoData } from "./photos.js";
 import { loadRecent, rememberDoc, type RecentDoc } from "./recent.js";
 import { ErrorScreen, Home, InlineCard, Loading, LogoSettings } from "./screens.js";
@@ -58,6 +59,7 @@ export function App({ bridge, initial }: { bridge: Bridge; initial?: { screen?: 
   const [displayMode, setDisplayMode] = useState(initial?.displayMode ?? host?.displayMode ?? "fullscreen");
   const [expanded, setExpanded] = useState(false);
   const [pdfBusy, setPdfBusy] = useState(false);
+  const [browserPdf, setBrowserPdf] = useState<{ docId: string; url: string; missingPhotos: number } | null>(null);
   const [recent, setRecent] = useState<RecentDoc[]>(() => loadRecent());
   const { toast, show } = useToast();
   const handledResult = useRef<CallToolResult | null>(null);
@@ -66,6 +68,7 @@ export function App({ bridge, initial }: { bridge: Bridge; initial?: { screen?: 
   screenRef.current = screen;
 
   const go = (next: Screen, keepHistory = false) => {
+    setBrowserPdf(null);
     setBack((b) => (keepHistory ? [...b, screenRef.current] : []));
     setScreen(next);
   };
@@ -220,6 +223,7 @@ export function App({ bridge, initial }: { bridge: Bridge; initial?: { screen?: 
   );
 
   const updateDoc = (next: JobDocument) => {
+    setBrowserPdf(null);
     const cur = screenRef.current;
     if (cur.kind !== "doc") return;
     const doc = recompute(next);
@@ -238,26 +242,28 @@ export function App({ bridge, initial }: { bridge: Bridge; initial?: { screen?: 
   const downloadPdf = async (doc: JobDocument) => {
     if (pdfBusy) return;
     setPdfBusy(true);
+    setBrowserPdf(null);
     try {
       const images = { logo: logo || null, photos: await allPhotoData(doc.photos.map((p) => p.uri), host) };
       const withLogo = { ...doc, business: { ...doc.business, logo_data_url: logo } };
       const name = fileNameFor(doc, ".pdf");
-      const viaHost = host?.connected ? await host.downloadFile(name, "application/pdf", { blob: await pdfBase64(withLogo, images) }) : false;
-      if (!viaHost) {
-        const url = URL.createObjectURL(await pdfBlob(withLogo, images));
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = name;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 30_000);
-      }
+      const base64 = await pdfBase64(withLogo, images);
       const missing = Object.values(images.photos).filter((v) => v === null).length;
-      show(missing ? `PDF ready. ${missing} photo${missing === 1 ? "" : "s"} couldn’t load.` : "PDF ready");
+      const viaHost = host?.connected ? await host.downloadFile(name, "application/pdf", { blob: base64 }) : false;
+      if (!viaHost) {
+        const current = screenRef.current;
+        if (current.kind !== "doc" || current.doc !== doc) {
+          show("The document changed while preparing the PDF. Tap Download PDF again.");
+          return;
+        }
+        setBrowserPdf({ docId: doc.doc_id, url: pdfDownloadUrl(name, base64), missingPhotos: missing });
+        show("The PDF wasn’t saved here. Open it in your browser to download.");
+        return;
+      }
+      show(missing ? `PDF sent for download. ${missing} photo${missing === 1 ? "" : "s"} couldn’t load.` : "PDF sent for download");
     } catch (error) {
       console.error(error);
-      show("Couldn’t make the PDF. Try again.");
+      show(error instanceof Error && error.message.includes("too large") ? error.message : "Couldn’t make the PDF. Try again.");
     } finally {
       setPdfBusy(false);
     }
@@ -432,6 +438,23 @@ export function App({ bridge, initial }: { bridge: Bridge; initial?: { screen?: 
   return (
     <main className="min-h-full">
       {body}
+      {browserPdf && screen.kind === "doc" && browserPdf.docId === screen.doc.doc_id && (
+        <aside className="border-t border-line bg-bg p-4" aria-label="PDF browser download">
+          <p className="mb-2 text-sm">Your PDF wasn’t saved in this app. Open it in your browser, then tap Save PDF.</p>
+          {browserPdf.missingPhotos > 0 && <p className="mb-2 text-sm">{browserPdf.missingPhotos} photo{browserPdf.missingPhotos === 1 ? "" : "s"} couldn’t load in this PDF.</p>}
+          {host ? (
+            <button className="tap rounded-lg bg-accent px-4 py-3 font-semibold text-[var(--primary-foreground)]" onClick={async () => {
+              if (!(await host.openLink(browserPdf.url))) show("Couldn’t open the browser. Copy the PDF link below and paste it into your browser.");
+            }}>Open PDF in browser</button>
+          ) : (
+            <a className="text-accent underline" href={browserPdf.url} target="_blank" rel="noreferrer">Open PDF in browser</a>
+          )}
+          <details className="mt-3 text-sm">
+            <summary>Copy PDF link</summary>
+            <textarea aria-label="PDF download link" className="mt-2 w-full" readOnly value={browserPdf.url} onFocus={(event) => event.currentTarget.select()} />
+          </details>
+        </aside>
+      )}
       <Toast message={toast?.message ?? null} action={toast?.action} onAction={toast?.onAction} />
     </main>
   );

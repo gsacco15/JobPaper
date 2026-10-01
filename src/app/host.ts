@@ -107,6 +107,7 @@ export class Host {
 
   /** Ask the host to save a file to the device. Returns false if unsupported or cancelled. */
   async downloadFile(name: string, mimeType: string, data: { text: string } | { blob: string }): Promise<boolean> {
+    if (!this.app.getHostCapabilities()?.downloadFile) return false;
     try {
       const res = await this.app.downloadFile({
         contents: [
@@ -117,7 +118,8 @@ export class Host {
         ],
       });
       return !res.isError;
-    } catch {
+    } catch (error) {
+      console.warn("JobPaper: host download failed", error);
       return false;
     }
   }

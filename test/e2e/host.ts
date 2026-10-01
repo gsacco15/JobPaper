@@ -11,6 +11,9 @@ const files = new Map<string, { text: string; etag: number; writable: boolean }>
 const log: Recorded[] = [];
 
 const subject = new URLSearchParams(location.search).get("subject") ?? "v1/e2e-user";
+const downloadMode = new URLSearchParams(location.search).get("download");
+const openLinkMode = new URLSearchParams(location.search).get("openlink");
+let releaseDownload: (() => void) | undefined;
 const client = new Client({ name: "fake-chatgpt", version: "1.0.0" });
 await client.connect(
   new StreamableHTTPClientTransport(new URL("/mcp", location.href), {
@@ -51,7 +54,7 @@ async function mount(mode: "inline" | "fullscreen") {
     { name: "fake-chatgpt", version: "1.0.0" },
     {
       openLinks: {},
-      downloadFile: {},
+      ...(downloadMode === "unsupported" ? {} : { downloadFile: {} }),
       serverTools: {},
       serverResources: {},
       updateModelContext: { text: {}, structuredContent: {}, resource: {} },
@@ -66,8 +69,19 @@ async function mount(mode: "inline" | "fullscreen") {
   };
   bridge.onupdatemodelcontext = record("ui/update-model-context") as never;
   bridge.onmessage = record("ui/message") as never;
-  bridge.ondownloadfile = record("ui/download-file") as never;
-  bridge.onopenlink = record("ui/open-link") as never;
+  if (downloadMode !== "unsupported") bridge.ondownloadfile = (async (params: unknown) => {
+    log.push({ method: "ui/download-file", params });
+    if (downloadMode === "delayed") {
+      await new Promise<void>((resolve) => { releaseDownload = resolve; });
+      return { isError: true };
+    }
+    if (downloadMode === "throws") throw new Error("Download denied");
+    return downloadMode === "rejected" ? { isError: true } : {};
+  }) as never;
+  bridge.onopenlink = (async (params: unknown) => {
+    log.push({ method: "ui/open-link", params });
+    return openLinkMode === "denied" ? { isError: true } : {};
+  }) as never;
   bridge.onrequestdisplaymode = async (params) => {
     log.push({ method: "ui/request-display-mode", params });
     displayMode = params.mode === "fullscreen" ? "fullscreen" : "inline";
@@ -118,6 +132,7 @@ Object.assign(window, {
     runTool,
     callTool: (name: string, args: Record<string, unknown>) => client.callTool({ name, arguments: args }),
     addFile: (uri: string, text: string, writable = true) => files.set(uri, { text, etag: 1, writable }),
+    finishDownload: () => releaseDownload?.(),
     ready: true,
   },
 });
