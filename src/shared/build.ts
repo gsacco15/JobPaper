@@ -52,8 +52,11 @@ const s = (v: unknown, max = 2000) => (typeof v === "string" ? v.trim().slice(0,
 /** "Bathroom remodel — Henderson" from the description and client. */
 export function deriveTitle(description: string, clientName: string): string {
   let base = description
-    .split(/[\n.!?]/)[0]!
+    .split(/[\n.!?;:]/)[0]!
     .replace(/^(please\s+)?(write up|put together|price out|make|create|draft|need|give me)\s+(an?\s+)?(estimate|quote|bid|price)?\s*(for|on)?\s*(an?|the)?\s*/i, "")
+    // Keep the job, drop the details: "6 ft cedar fence, 120 ft, for the Lees" -> "6 ft cedar fence"
+    .split(",")[0]!
+    .replace(/\s+(for|at)\s+(the\s+)?[A-Z][\w'’.-]*(\s+[A-Z][\w'’.-]*)*\s*$/, "")
     .trim();
   if (base.length > 60) base = base.slice(0, 57).replace(/\s+\S*$/, "") + "…";
   if (!base) base = "Job";
