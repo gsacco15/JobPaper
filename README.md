@@ -16,7 +16,7 @@ Sample PDFs: [estimate](docs/samples/estimate.pdf) · [change order](docs/sample
 ChatGPT model ──drafts line items──▶ create_estimate / create_change_order / create_job_report
                                         │  (MCP server, stateless: computes totals from settings)
                                         ▼
-            document JSON + resource link (jobpaper://doc/<name>.est.json?d=…)
+            document JSON + resource link (jobpaper://doc/<name>.est.json?z=…)
                                         │
                                         ▼
         Panel (ui://jobpaper/document-v1, one self-contained HTML file)

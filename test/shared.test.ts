@@ -201,7 +201,8 @@ describe("files", () => {
     const est = { ...bathroom(), business: { ...bathroom().business, logo_data_url: "data:image/png;base64,AAAA" } };
     const uri = encodeDocUri(est);
     expect(uri.startsWith("jobpaper://doc/")).toBe(true);
-    expect(decodeURIComponent(uri)).toContain(".est.json?d=");
+    expect(decodeURIComponent(uri)).toContain(".est.json?z=");
+    expect(uri.length).toBeLessThan(JSON.stringify(est).length);
     const back = decodeDocUri(uri)!;
     expect(back.doc_id).toBe(est.doc_id);
     expect(back.totals.total).toBe(est.totals.total);
@@ -223,6 +224,10 @@ describe("files", () => {
     expect(resolveInlineDocument(JSON.stringify(est))?.doc_id).toBe(est.doc_id);
     expect(resolveInlineDocument("host-resource://abc")).toBeNull();
     expect(decodeDocUri("jobpaper://doc/x?d=!!!")).toBeNull();
+    // A model that garbles the payload gets a clean failure, not a wrong document.
+    const uri = encodeDocUri(est);
+    expect(decodeDocUri(uri.slice(0, -12) + "AAAAAAAAAAAA")).toBeNull();
+    expect(decodeDocUri(uri.slice(0, -5))).toBeNull();
     expect(normalizeDocument({ doc_type: "invoice" })).toBeNull();
   });
 });

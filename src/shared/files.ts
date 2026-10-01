@@ -1,3 +1,4 @@
+import { strFromU8, strToU8, unzlibSync, zlibSync } from "fflate";
 import { DOC_EXTENSIONS, type DocType, type JobDocument } from "./document.js";
 import { normalizeDocument } from "./normalize.js";
 
@@ -40,8 +41,7 @@ export function forStorage(doc: JobDocument): JobDocument {
   return { ...rest, business: { ...doc.business, logo_data_url: "" } };
 }
 
-function toBase64Url(text: string): string {
-  const bytes = new TextEncoder().encode(text);
+function bytesToBase64Url(bytes: Uint8Array): string {
   let bin = "";
   for (let i = 0; i < bytes.length; i += 0x8000) {
     bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
@@ -49,17 +49,20 @@ function toBase64Url(text: string): string {
   return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
-function fromBase64Url(data: string): string {
-  const b64 = data.replace(/-/g, "+").replace(/_/g, "/");
+function base64UrlToBytes(data: string): Uint8Array {
+  const b64 = data.replace(/-/g, "+").replace(/_/g, "/").replace(/[^A-Za-z0-9+/]/g, "");
   const bin = atob(b64 + "===".slice((b64.length + 3) % 4));
-  const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
-  return new TextDecoder().decode(bytes);
+  return Uint8Array.from(bin, (c) => c.charCodeAt(0));
 }
 
-/** jobpaper://doc/<file name>?d=<base64url JSON> */
+/**
+ * jobpaper://doc/<file name>?z=<base64url(zlib(JSON))> (zlib carries a checksum)
+ * Compressed so the URI stays short enough for the model to pass back intact.
+ * A corrupted URI fails to inflate and is rejected rather than misread.
+ */
 export function encodeDocUri(doc: JobDocument): string {
-  const payload = toBase64Url(JSON.stringify(forStorage(doc)));
-  return `${DOC_URI_PREFIX}${encodeURIComponent(fileNameFor(doc))}?d=${payload}`;
+  const payload = bytesToBase64Url(zlibSync(strToU8(JSON.stringify(forStorage(doc))), { level: 9 }));
+  return `${DOC_URI_PREFIX}${encodeURIComponent(fileNameFor(doc))}?z=${payload}`;
 }
 
 export function isDocUri(uri: string): boolean {
@@ -68,10 +71,13 @@ export function isDocUri(uri: string): boolean {
 
 export function decodeDocUri(uri: string): JobDocument | null {
   if (!isDocUri(uri)) return null;
-  const q = uri.indexOf("?d=");
-  if (q < 0) return null;
+  const match = /[?&]([zd])=([^&#]*)/.exec(uri);
+  if (!match) return null;
   try {
-    return normalizeDocument(JSON.parse(fromBase64Url(uri.slice(q + 3))));
+    const bytes = base64UrlToBytes(decodeURIComponent(match[2]!));
+    // z = zlib JSON; d = plain JSON (early builds).
+    const text = match[1] === "z" ? strFromU8(unzlibSync(bytes)) : strFromU8(bytes);
+    return normalizeDocument(JSON.parse(text));
   } catch {
     return null;
   }

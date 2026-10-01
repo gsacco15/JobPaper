@@ -169,17 +169,20 @@ export function createJobPaperServer(opts: JobPaperServerOptions): McpServer {
     ],
   }));
 
-  // Saved documents that live inside their own URI (jobpaper://doc/<name>?d=...).
-  server.registerResource(
-    "Saved JobPaper document",
-    new ResourceTemplate(`${DOC_URI_PREFIX}{name}{?d}`, { list: undefined }),
-    { mimeType: "application/json", description: "An estimate, change order, or job report saved by JobPaper." },
-    async (uri) => {
-      const doc = decodeDocUri(uri.href);
-      if (!doc) throw new Error("That JobPaper file couldn't be read.");
-      return { contents: [{ uri: uri.href, mimeType: "application/json", text: serializeDocument(doc) }] };
-    },
-  );
+  // Saved documents that live inside their own URI (jobpaper://doc/<name>?z=...).
+  // One template per query key: the SDK's matcher handles a single query variable.
+  for (const key of ["z", "d"]) {
+    server.registerResource(
+      key === "z" ? "Saved JobPaper document" : "Saved JobPaper document (uncompressed)",
+      new ResourceTemplate(`${DOC_URI_PREFIX}{name}{?${key}}`, { list: undefined }),
+      { mimeType: "application/json", description: "An estimate, change order, or job report saved by JobPaper." },
+      async (uri) => {
+        const doc = decodeDocUri(uri.href);
+        if (!doc) throw new Error("That JobPaper file couldn't be read.");
+        return { contents: [{ uri: uri.href, mimeType: "application/json", text: serializeDocument(doc) }] };
+      },
+    );
+  }
 
   const docUi = { ui: { resourceUri: UI_URI } };
 
