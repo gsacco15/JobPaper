@@ -43,3 +43,26 @@ export function settingsHints(s: BusinessSettings): string[] {
   }
   return hints;
 }
+
+/** Fill gaps with defaults and coerce types, so reads always return every field. */
+export function completeSettings(partial: Partial<BusinessSettings> | null | undefined): BusinessSettings {
+  const p = partial ?? {};
+  const str = (v: unknown, fallback: string, max: number) => (typeof v === "string" ? v.slice(0, max) : fallback);
+  const pct = (v: unknown) => {
+    const n = typeof v === "number" ? v : Number(v);
+    return Number.isFinite(n) ? Math.min(Math.max(n, 0), 100) : 0;
+  };
+  const logo = str(p.logo_data_url, "", MAX_LOGO_DATA_URL_LENGTH + 1);
+  return {
+    business_name: str(p.business_name, DEFAULT_SETTINGS.business_name, 120),
+    phone: str(p.phone, DEFAULT_SETTINGS.phone, 40),
+    email: str(p.email, DEFAULT_SETTINGS.email, 120),
+    logo_data_url:
+      logo.length <= MAX_LOGO_DATA_URL_LENGTH && (logo === "" || /^data:image\/(png|jpeg|webp);base64,/.test(logo))
+        ? logo
+        : "",
+    default_markup_pct: pct(p.default_markup_pct ?? DEFAULT_SETTINGS.default_markup_pct),
+    default_tax_pct: pct(p.default_tax_pct ?? DEFAULT_SETTINGS.default_tax_pct),
+    default_terms: str(p.default_terms, DEFAULT_SETTINGS.default_terms, 2000),
+  };
+}

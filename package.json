@@ -14,6 +14,7 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.1",
     "esbuild": "^0.28.2",
+    "playwright-core": "^1.63.0",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3",
@@ -29,5 +30,19 @@
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "zod": "^4.4.3"
+  },
+  "scripts": {
+    "build:app": "vite build && node scripts/gen-assets.mjs",
+    "build:server": "esbuild src/server/node.ts --bundle --platform=node --format=esm --target=node22 --outfile=dist/server.mjs --banner:js=\"import{createRequire}from'module';const require=createRequire(import.meta.url);\"",
+    "build": "npm run build:app && npm run build:server",
+    "start": "node dist/server.mjs",
+    "dev": "npm run build:app && JOBPAPER_DEV_USER=dev tsx src/server/node.ts",
+    "preview": "vite --open '/index.html?demo=estimate'",
+    "typecheck": "node scripts/gen-assets.mjs && tsc -p .",
+    "test": "vitest run",
+    "test:unit": "vitest run test/shared.test.ts test/server.test.ts",
+    "screenshots": "node scripts/screenshots.mjs docs/screenshots",
+    "pdf-samples": "node scripts/pdf-samples.mjs docs/samples",
+    "check": "npm run build && npm run typecheck && npm test"
   }
 }

@@ -167,7 +167,7 @@ describe("MCP server", () => {
     expect(co1Doc.change!.sequence).toBe(1);
     expect(co1Doc.change!.original_total).toBe(estDoc.totals.total);
     expect(co1Doc.totals.subtotal).toBe(300);
-    expect(co1.structuredContent.file.name).toMatch(/^CO-1 · Deck.*\.co\.json$/);
+    expect(co1.structuredContent.file.name).toMatch(/^CO-1 - Deck.*\.co\.json$/);
     expect(co1Doc.references.source_uri).toBe(est.structuredContent.file.uri);
 
     const co2 = (await call("create_change_order", {

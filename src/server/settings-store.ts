@@ -1,4 +1,6 @@
-import { DEFAULT_SETTINGS, MAX_LOGO_DATA_URL_LENGTH, type BusinessSettings } from "../shared/settings.js";
+import { completeSettings, type BusinessSettings } from "../shared/settings.js";
+
+export { completeSettings };
 
 // Business defaults are the only thing JobPaper keeps server-side. They're
 // keyed by a SHA-256 hash of ChatGPT's anonymized user id (_meta["openai/subject"]),
@@ -62,29 +64,6 @@ export function createSettingsStore(env: Record<string, string | undefined> = pr
   const token = env.KV_REST_API_TOKEN ?? env.UPSTASH_REDIS_REST_TOKEN;
   if (url && token) return new RestKvSettingsStore(url, token);
   return new MemorySettingsStore();
-}
-
-/** Fill gaps with defaults and coerce types, so reads always return every field. */
-export function completeSettings(partial: Partial<BusinessSettings> | null | undefined): BusinessSettings {
-  const p = partial ?? {};
-  const str = (v: unknown, fallback: string, max: number) => (typeof v === "string" ? v.slice(0, max) : fallback);
-  const pct = (v: unknown) => {
-    const n = typeof v === "number" ? v : Number(v);
-    return Number.isFinite(n) ? Math.min(Math.max(n, 0), 100) : 0;
-  };
-  const logo = str(p.logo_data_url, "", MAX_LOGO_DATA_URL_LENGTH + 1);
-  return {
-    business_name: str(p.business_name, DEFAULT_SETTINGS.business_name, 120),
-    phone: str(p.phone, DEFAULT_SETTINGS.phone, 40),
-    email: str(p.email, DEFAULT_SETTINGS.email, 120),
-    logo_data_url:
-      logo.length <= MAX_LOGO_DATA_URL_LENGTH && (logo === "" || /^data:image\/(png|jpeg|webp);base64,/.test(logo))
-        ? logo
-        : "",
-    default_markup_pct: pct(p.default_markup_pct ?? DEFAULT_SETTINGS.default_markup_pct),
-    default_tax_pct: pct(p.default_tax_pct ?? DEFAULT_SETTINGS.default_tax_pct),
-    default_terms: str(p.default_terms, DEFAULT_SETTINGS.default_terms, 2000),
-  };
 }
 
 export async function hashUserId(subject: string): Promise<string> {

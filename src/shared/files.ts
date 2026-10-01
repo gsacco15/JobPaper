@@ -22,7 +22,7 @@ export function docTypeForFileName(name: string): DocType | null {
 export function fileNameFor(doc: Pick<JobDocument, "title" | "doc_type">, ext?: string): string {
   const safe =
     doc.title
-      .replace(/[—–]/g, "-")
+      .replace(/[—–·•]/g, "-")
       .replace(/[\\/:*?"<>|#%{}^~[\]`]+/g, "")
       .replace(/\s+/g, " ")
       .trim()
