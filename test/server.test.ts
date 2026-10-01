@@ -227,3 +227,14 @@ describe("MCP server", () => {
     expect(s.structuredContent.settings.logo_data_url).toBe("data:image/png;base64,iVBORw0KGgo=");
   });
 });
+
+describe("settings storage credentials", async () => {
+  const { findKvCredentials } = await import("../src/server/settings-store.js");
+  it("finds plain and prefixed Vercel/Upstash variables", () => {
+    expect(findKvCredentials({ KV_REST_API_URL: "u", KV_REST_API_TOKEN: "t" })).toEqual({ url: "u", token: "t" });
+    expect(findKvCredentials({ STORAGE_KV_REST_API_URL: "u2", STORAGE_KV_REST_API_TOKEN: "t2" })).toEqual({ url: "u2", token: "t2" });
+    expect(findKvCredentials({ STORAGE_UPSTASH_REDIS_REST_URL: "u3", STORAGE_UPSTASH_REDIS_REST_TOKEN: "t3" })).toEqual({ url: "u3", token: "t3" });
+    expect(findKvCredentials({ A_KV_REST_API_URL: "u", B_KV_REST_API_TOKEN: "t" })).toBeNull();
+    expect(findKvCredentials({})).toBeNull();
+  });
+});

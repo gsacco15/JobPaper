@@ -59,10 +59,31 @@ export class RestKvSettingsStore implements SettingsStore {
   }
 }
 
+/**
+ * Find REST KV credentials. Vercel's Upstash integration may add a custom
+ * prefix (STORAGE_KV_REST_API_URL, ...), so match by suffix with a shared prefix.
+ */
+export function findKvCredentials(env: Record<string, string | undefined>): { url: string; token: string } | null {
+  const pairs: Array<[string, string]> = [
+    ["KV_REST_API_URL", "KV_REST_API_TOKEN"],
+    ["UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN"],
+  ];
+  for (const [urlKey, tokenKey] of pairs) {
+    if (env[urlKey] && env[tokenKey]) return { url: env[urlKey]!, token: env[tokenKey]! };
+  }
+  for (const [urlKey, tokenKey] of pairs) {
+    for (const key of Object.keys(env).sort()) {
+      if (!key.endsWith(urlKey) || !env[key]) continue;
+      const token = env[key.slice(0, -urlKey.length) + tokenKey];
+      if (token) return { url: env[key]!, token };
+    }
+  }
+  return null;
+}
+
 export function createSettingsStore(env: Record<string, string | undefined> = process.env): SettingsStore {
-  const url = env.KV_REST_API_URL ?? env.UPSTASH_REDIS_REST_URL;
-  const token = env.KV_REST_API_TOKEN ?? env.UPSTASH_REDIS_REST_TOKEN;
-  if (url && token) return new RestKvSettingsStore(url, token);
+  const creds = findKvCredentials(env);
+  if (creds) return new RestKvSettingsStore(creds.url, creds.token);
   return new MemorySettingsStore();
 }
 
