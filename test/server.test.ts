@@ -66,6 +66,15 @@ describe("MCP server", () => {
     ]);
     expect(byName["settings.read"]).toBeTruthy();
     expect(byName["settings.update"]).toBeTruthy();
+    // Public review checks every tool, including settings and panel helpers.
+    for (const tool of tools) {
+      expect(tool.description, tool.name).toBeTruthy();
+      expect(tool.annotations, tool.name).toMatchObject({
+        readOnlyHint: !["settings.update", "save_logo"].includes(tool.name),
+        destructiveHint: false,
+        openWorldHint: false,
+      });
+    }
     // No location or catch-all inputs.
     const est = byName.create_estimate!.inputSchema as any;
     expect(Object.keys(est.properties).sort()).toEqual(
