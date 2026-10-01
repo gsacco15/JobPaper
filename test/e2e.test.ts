@@ -127,10 +127,11 @@ describe.skipIf(!hasPanel)("panel in a host", () => {
     expect(dl.resource.uri).toContain("Bathroom%20remodel%20-%20Henderson.pdf");
     expect(Buffer.from(dl.resource.blob, "base64").subarray(0, 5).toString()).toBe("%PDF-");
     await f.getByText("PDF sent for download", { exact: true }).waitFor();
+    expect(await log(page, "ui/open-link")).toHaveLength(0);
     await page.close();
   }, 30_000);
 
-  for (const mode of ["unsupported", "rejected", "throws"]) it(`offers a working browser PDF when the host download is ${mode}`, async () => {
+  for (const mode of ["unsupported", "rejected", "throws"]) it(`automatically opens and downloads a browser PDF when the host download is ${mode}`, async () => {
     const page = await openHost(mode);
     await page.evaluate((a) => (window as any).__host.runTool("create_estimate", a, "fullscreen"), ESTIMATE_ARGS);
     const f = panel(page);
@@ -140,19 +141,18 @@ describe.skipIf(!hasPanel)("panel in a host", () => {
     expect(await f.getByText("PDF ready", { exact: true }).count()).toBe(0);
     expect(await f.getByText("PDF sent for download", { exact: true }).count()).toBe(0);
     if (mode === "unsupported") expect(await log(page, "ui/download-file")).toHaveLength(0);
-    await open.click();
     await page.waitForFunction(() => (window as any).__host.log.some((e: any) => e.method === "ui/open-link"));
+    expect(await log(page, "ui/open-link")).toHaveLength(1);
     const url = new URL((await log(page, "ui/open-link")).at(-1).params.url);
     expect(url.origin).toBe("https://jobpaperapp.com");
     expect(url.pathname).toBe("/download");
     expect(url.search).toBe("");
     const external = await browser.newPage();
+    const received = external.waitForEvent("download");
     await external.goto(`${base}/download${url.hash}`);
     expect(new URL(external.url()).hash).toBe("");
     const save = external.getByRole("link", { name: "Save PDF", exact: true });
     await save.waitFor();
-    const received = external.waitForEvent("download");
-    await save.click();
     const downloaded = await received;
     expect(downloaded.suggestedFilename()).toBe("Bathroom remodel - Henderson.pdf");
     const bytes = readFileSync((await downloaded.path())!);
@@ -162,6 +162,34 @@ describe.skipIf(!hasPanel)("panel in a host", () => {
     await f.getByLabel("Quantity").fill("55");
     await f.getByRole("button", { name: "Done", exact: true }).click();
     expect(await open.count()).toBe(0);
+    await external.close();
+    await page.close();
+  }, 30_000);
+
+  it("keeps Save PDF working when the browser blocks the automatic download", async () => {
+    const page = await openHost("unsupported");
+    await page.evaluate((a) => (window as any).__host.runTool("create_estimate", a, "fullscreen"), ESTIMATE_ARGS);
+    await panel(page).getByRole("button", { name: "Download PDF", exact: true }).click();
+    await page.waitForFunction(() => (window as any).__host.log.some((e: any) => e.method === "ui/open-link"));
+    const url = new URL((await log(page, "ui/open-link"))[0].params.url);
+    const external = await browser.newPage();
+    await external.addInitScript(() => {
+      const click = HTMLAnchorElement.prototype.click;
+      HTMLAnchorElement.prototype.click = function () {
+        if (this.id === "save" && !navigator.userActivation.isActive) {
+          (window as any).__automaticDownloadBlocked = true;
+          return;
+        }
+        click.call(this);
+      };
+    });
+    await external.goto(`${base}/download${url.hash}`);
+    await external.waitForFunction(() => (window as any).__automaticDownloadBlocked);
+    const received = external.waitForEvent("download");
+    await external.getByRole("link", { name: "Save PDF", exact: true }).click();
+    const downloaded = await received;
+    expect(downloaded.suggestedFilename()).toBe("Bathroom remodel - Henderson.pdf");
+    expect(readFileSync((await downloaded.path())!).subarray(0, 5).toString()).toBe("%PDF-");
     await external.close();
     await page.close();
   }, 30_000);
@@ -181,6 +209,8 @@ describe.skipIf(!hasPanel)("panel in a host", () => {
     await page.evaluate((a) => (window as any).__host.runTool("create_estimate", a, "fullscreen"), ESTIMATE_ARGS);
     const f = panel(page);
     await f.getByRole("button", { name: "Download PDF", exact: true }).click();
+    await f.getByText("Your browser didn’t open. Use Open PDF in browser below, or copy the PDF link.", { exact: true }).waitFor();
+    expect(await log(page, "ui/open-link")).toHaveLength(1);
     await f.getByRole("button", { name: "Open PDF in browser", exact: true }).click();
     await f.getByText("Couldn’t open the browser. Copy the PDF link below and paste it into your browser.", { exact: true }).waitFor();
     await f.getByText("Copy PDF link", { exact: true }).click();
@@ -200,6 +230,7 @@ describe.skipIf(!hasPanel)("panel in a host", () => {
     await page.evaluate(() => (window as any).__host.finishDownload());
     await f.getByText("The document changed while preparing the PDF. Tap Download PDF again.", { exact: true }).waitFor();
     expect(await f.getByRole("button", { name: "Open PDF in browser", exact: true }).count()).toBe(0);
+    expect(await log(page, "ui/open-link")).toHaveLength(0);
     await page.close();
   }, 30_000);
 

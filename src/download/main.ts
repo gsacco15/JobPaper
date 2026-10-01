@@ -16,6 +16,9 @@ try {
   const preview = document.getElementById("preview") as HTMLIFrameElement;
   preview.src = url;
   preview.hidden = false;
+  // Try once after painting the page. Browser policy may require the user to
+  // tap Save PDF; leave that link visible and never claim the file was saved.
+  requestAnimationFrame(() => save.click());
   // The browser releases blob URLs when this document is unloaded. Keeping it
   // until then also lets Back restore the page from the browser's page cache.
 } catch {

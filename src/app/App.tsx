@@ -256,8 +256,22 @@ export function App({ bridge, initial }: { bridge: Bridge; initial?: { screen?: 
           show("The document changed while preparing the PDF. Tap Download PDF again.");
           return;
         }
-        setBrowserPdf({ docId: doc.doc_id, url: pdfDownloadUrl(name, base64), missingPhotos: missing });
-        show("The PDF wasn’t saved here. Open it in your browser to download.");
+        const url = pdfDownloadUrl(name, base64);
+        setBrowserPdf({ docId: doc.doc_id, url, missingPhotos: missing });
+        show("Opening your PDF…");
+        let opened = false;
+        if (host) {
+          opened = await host.openLink(url);
+        } else {
+          const popup = window.open(url, "_blank");
+          if (popup) {
+            popup.opener = null;
+            opened = true;
+          }
+        }
+        if (!opened && screenRef.current.kind === "doc" && screenRef.current.doc === doc) {
+          show("Your browser didn’t open. Use Open PDF in browser below, or copy the PDF link.");
+        }
         return;
       }
       show(missing ? `PDF sent for download. ${missing} photo${missing === 1 ? "" : "s"} couldn’t load.` : "PDF sent for download");
@@ -440,7 +454,7 @@ export function App({ bridge, initial }: { bridge: Bridge; initial?: { screen?: 
       {body}
       {browserPdf && screen.kind === "doc" && browserPdf.docId === screen.doc.doc_id && (
         <aside className="border-t border-line bg-bg p-4" aria-label="PDF browser download">
-          <p className="mb-2 text-sm">Your PDF wasn’t saved in this app. Open it in your browser, then tap Save PDF.</p>
+          <p className="mb-2 text-sm">Your PDF will download in your browser. If the download doesn’t start, tap Save PDF there. If nothing opened, use the button below.</p>
           {browserPdf.missingPhotos > 0 && <p className="mb-2 text-sm">{browserPdf.missingPhotos} photo{browserPdf.missingPhotos === 1 ? "" : "s"} couldn’t load in this PDF.</p>}
           {host ? (
             <button className="tap rounded-lg bg-accent px-4 py-3 font-semibold text-[var(--primary-foreground)]" onClick={async () => {
