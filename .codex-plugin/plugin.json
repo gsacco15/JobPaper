@@ -2,9 +2,9 @@
   "name": "jobpaper",
   "version": "1.0.0",
   "description": "Turns a contractor's notes and photos into estimates, change orders, and job reports you can send as a PDF.",
-  "author": { "name": "JobPaper", "email": "support@jobpaper.app", "url": "https://jobpaper.app" },
-  "homepage": "https://jobpaper.app",
-  "license": "UNLICENSED",
+  "author": {
+    "name": "JobPaper"
+  },
   "skills": "./skills/",
   "extensions": {
     "com.openai": {
@@ -18,13 +18,15 @@
     "longDescription": "JobPaper turns a contractor's notes and photos into a professional estimate, change order, or daily/weekly job report. Say \"write up an estimate for…\", \"change order for…\", or \"daily report for the … job\". The document opens as an editable panel: tap any line to fix it, then Download PDF or Copy as text. Totals, markup, and tax are calculated from your business settings. Estimates are saved as files in the chat, so a change order can reference the original estimate weeks later.",
     "developerName": "JobPaper",
     "category": "Productivity",
-    "capabilities": ["Interactive", "Read"],
+    "capabilities": [
+      "Interactive",
+      "Read"
+    ],
     "composerIcon": "./assets/icon.svg",
     "logo": "./assets/logo.svg",
     "logoDark": "./assets/logo.svg",
-    "defaultPrompt": ["Write up an estimate for a bathroom remodel"],
-    "privacyPolicyUrl": "https://jobpaper.app/privacy",
-    "termsOfServiceUrl": "https://jobpaper.app/terms",
-    "supportEmail": "support@jobpaper.app"
+    "defaultPrompt": [
+      "Write up an estimate for a bathroom remodel"
+    ]
   }
 }
