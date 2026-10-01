@@ -82,7 +82,7 @@ describe("estimate", () => {
     expect(doc.totals.tax).toBe(201.65);
     expect(doc.totals.total).toBe(2645.85);
     expect(doc.business.name).toBe("Sacco Remodeling");
-    expect(doc.title).toBe("Bathroom remodel for the Hendersons — Henderson");
+    expect(doc.title).toBe("Bathroom remodel — Henderson");
     expect(doc.valid_days).toBe(30);
     expect(doc.terms).toBe(DEFAULT_SETTINGS.default_terms);
   });
@@ -109,6 +109,9 @@ describe("estimate", () => {
   it("derives plain titles", () => {
     expect(deriveTitle("write up an estimate for a 6ft cedar fence", "")).toBe("6ft cedar fence");
     expect(deriveTitle("Kitchen paint. Two coats.", "Ana Ruiz")).toBe("Kitchen paint — Ruiz");
+    expect(deriveTitle("6 ft cedar privacy fence, 120 linear feet, for the Lees", "Dana Lee")).toBe("6 ft cedar privacy fence — Lee");
+    expect(deriveTitle("Bathroom remodel for the Hendersons", "")).toBe("Bathroom remodel");
+    expect(deriveTitle("Paint the garage for $900", "")).toBe("Paint the garage for $900");
   });
 });
 
@@ -236,7 +239,7 @@ describe("copy as text", () => {
   it("is short and includes total, deposit, and phone", () => {
     const text = toSmsText(bathroom());
     const lines = text.split("\n");
-    expect(lines[0]).toBe("Sacco Remodeling — Estimate: Bathroom remodel for the Hendersons — Henderson");
+    expect(lines[0]).toBe("Sacco Remodeling — Estimate: Bathroom remodel — Henderson");
     expect(text).toContain("Total: $2,645.85");
     expect(text).toContain("Deposit to schedule: $1,322.93 (50%)");
     expect(lines.at(-1)).toBe("Questions? 512-555-0142");
