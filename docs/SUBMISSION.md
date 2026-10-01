@@ -14,10 +14,10 @@ Copy-paste material for the OpenAI Platform submission, in the order the checkli
 
 **Category:** Productivity
 **Default prompt:** Write up an estimate for a bathroom remodel
-**Server URL:** `https://jobpaper.app/mcp` (no authentication)
-**Privacy policy:** https://jobpaper.app/privacy
-**Terms:** https://jobpaper.app/terms
-**Support:** support@jobpaper.app · https://jobpaper.app/support
+**Server URL:** `https://jobpaperapp.com/mcp` (no authentication)
+**Privacy policy:** https://jobpaperapp.com/privacy
+**Terms:** https://jobpaperapp.com/terms
+**Support:** support@jobpaperapp.com · https://jobpaperapp.com/support
 
 ## Tool annotations and justifications
 
@@ -74,8 +74,9 @@ Use real captures from ChatGPT once connected in developer mode. Until then, the
 - [x] All document tools `readOnlyHint: true, destructiveHint: false, openWorldHint: false`, with one-line justifications (above; enforced by `test/server.test.ts`)
 - [x] Minimal inputs: no location lookups, no history, no catch-all (enforced by test)
 - [x] Privacy policy: `public/privacy.html` — data collected, purpose, retention (none server-side except settings), recipients (none), contact
-- [ ] Support email live: create `support@jobpaper.app` (or change the address everywhere: `grep -r jobpaper.app`) — *you*
-- [ ] Domain: point `jobpaper.app` (or your domain) at the Vercel deployment — *you*
+- [ ] Support email live: create `support@jobpaperapp.com` (forwarding to your inbox is fine) — *you*
+- [x] Domain bought: `jobpaperapp.com`
+- [ ] Domain added in Vercel (Settings → Domains) and `https://jobpaperapp.com/mcp` returns `"status":"ok"` — *you*
 - [ ] Panel tested inline, thread panel, fullscreen, light and dark, phone width — automated in preview and the e2e host; repeat on a real phone with [TESTING.md](TESTING.md)
 - [ ] File viewer tested: create estimate, close chat, reopen file, make change order — needs ChatGPT desktop (see [DECISIONS.md](DECISIONS.md) day-1 checks)
 - [x] Error states: empty description, photo fails to load, settings unset (tests + panel hints)

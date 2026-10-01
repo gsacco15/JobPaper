@@ -115,7 +115,7 @@ export function createJobPaperServer(opts: JobPaperServerOptions): McpServer {
     title: "JobPaper",
     version: SERVER_VERSION,
     icons: [icon],
-    websiteUrl: "https://jobpaper.app",
+    websiteUrl: "https://jobpaperapp.com",
   });
 
   async function userKey(meta: Meta): Promise<string | null> {
