@@ -83,3 +83,14 @@ Use real captures from ChatGPT once connected in developer mode. Until then, the
 - [ ] Screenshots: replace with real ChatGPT captures
 - [x] No mention of Pro, plans, pricing, or upgrades
 - [ ] Submit via the OpenAI Platform, note the date, respond to reviewer feedback within 24h — *you*
+
+## Upload package (platform.openai.com/plugins)
+
+Everything below is in `.codex-plugin/plugin.json` and imports with the ZIP: listing text, four URLs, brand colors, light/dark logo and composer icons, screenshots, 5 positive + 3 negative review cases, release notes, US availability, and "no commerce".
+
+1. **Demo video:** record the five positive cases in ChatGPT desktop, upload it (YouTube unlisted, Loom, or Google Drive "anyone with the link"), and add `"demo_recording_url": "<link>"` under `extensions.com.openai.review`.
+2. **Build the ZIP:** `npm run package-plugin` → `dist/jobpaper-plugin-<version>.zip`. The script refuses to build if a limit or file is wrong.
+3. **Upload:** Plugins → Upload new or existing plugin → choose your verified developer identity → upload the ZIP. Fix any Metadata & Skills findings, bump `version`, and re-upload.
+4. **Connect the MCP server:** MCPs → Jobpaper → Connect. Copy the domain-verification token, set it as `OPENAI_APPS_CHALLENGE` in Vercel (Settings → Environment Variables), redeploy, and confirm that `https://jobpaperapp.com/.well-known/openai-apps-challenge` shows only the token. Then finish connecting (authentication: none) and wait for the tool scan.
+5. **Review details:** no reviewer credentials needed (no sign-in). Check the imported test cases.
+6. **Submit for review**, complete the attestations, and publish after approval.

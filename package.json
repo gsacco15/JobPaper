@@ -44,6 +44,7 @@
     "test:unit": "vitest run test/shared.test.ts test/server.test.ts",
     "screenshots": "node scripts/screenshots.mjs docs/screenshots && mkdir -p public/screenshots && cp docs/screenshots/*.png public/screenshots/",
     "pdf-samples": "node scripts/pdf-samples.mjs docs/samples",
-    "check": "npm run build && npm run typecheck && npm test"
+    "check": "npm run build && npm run typecheck && npm test",
+    "package-plugin": "node scripts/package-plugin.mjs"
   }
 }

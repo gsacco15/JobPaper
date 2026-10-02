@@ -1,32 +1,104 @@
 {
   "name": "jobpaper",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "Turns a contractor's notes and photos into estimates, change orders, and job reports you can send as a PDF.",
   "author": {
-    "name": "JobPaper"
+    "name": "JobPaper",
+    "email": "support@jobpaperapp.com",
+    "url": "https://jobpaperapp.com"
   },
+  "homepage": "https://jobpaperapp.com",
+  "keywords": ["contractor", "estimate", "quote", "change order", "job report", "PDF", "construction"],
   "skills": "./skills/",
-  "extensions": {
-    "com.openai": {
-      "onboardingSkill": "./skills/setup/SKILL.md"
-    }
-  },
   "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "JobPaper",
-    "shortDescription": "Estimates, change orders, and job reports as PDFs",
-    "longDescription": "JobPaper turns a contractor's notes and photos into a professional estimate, change order, or daily/weekly job report. Say \"write up an estimate for…\", \"change order for…\", or \"daily report for the … job\". The document opens as an editable panel: tap any line to fix it, then Download PDF or Copy as text. Totals, markup, and tax are calculated from your business settings. Estimates are saved as files in the chat, so a change order can reference the original estimate weeks later.",
+    "shortDescription": "Estimates & job report PDFs",
+    "longDescription": "JobPaper turns a contractor's notes and photos into three documents: an estimate, a change order, or a daily/weekly job report. The document opens as an editable panel: tap any line to change it, then Download PDF or Copy as text. Totals, markup, and sales tax are calculated from your business settings (business name, phone, email, logo, markup, tax, and payment terms). Estimates are saved as files in the chat, so a change order can reference the original estimate and its total.\n\nBuilt for small trade crews: remodel, plumbing, electrical, roofing, painting, fence and deck, drywall, flooring, tile, HVAC, landscaping, and concrete.\n\nLimitations: JobPaper does not send invoices, take payments, collect signatures, or schedule work. Payment terms are editable samples, not legal advice. Job details and photos are not stored on JobPaper's servers; only your business settings are saved.",
     "developerName": "JobPaper",
     "category": "Productivity",
-    "capabilities": [
-      "Interactive",
-      "Read"
-    ],
-    "composerIcon": "./assets/icon.svg",
-    "logo": "./assets/logo.svg",
-    "logoDark": "./assets/logo.svg",
+    "capabilities": ["Interactive", "Read"],
+    "websiteURL": "https://jobpaperapp.com",
+    "supportURL": "https://jobpaperapp.com/support",
+    "privacyPolicyURL": "https://jobpaperapp.com/privacy",
+    "termsOfServiceURL": "https://jobpaperapp.com/terms",
     "defaultPrompt": [
-      "Write up an estimate for a bathroom remodel"
+      "Write up an estimate for a bathroom remodel",
+      "Change order: the customer added a second gate",
+      "End of day report for the Henderson job"
+    ],
+    "brandColor": "#15171B",
+    "brandColorDark": "#7AB0FF",
+    "composerIcon": "./assets/plugin/composer-icon.png",
+    "composerIconDark": "./assets/plugin/composer-icon-dark.png",
+    "logo": "./assets/plugin/logo.png",
+    "logoDark": "./assets/plugin/logo-dark.png",
+    "screenshots": [
+      "./assets/plugin/screenshot-estimate-light.png",
+      "./assets/plugin/screenshot-change_order-light.png",
+      "./assets/plugin/screenshot-job_report-light.png",
+      "./assets/plugin/screenshot-estimate-dark.png"
     ]
+  },
+  "extensions": {
+    "com.openai": {
+      "onboardingSkill": "./skills/setup/SKILL.md",
+      "review": {
+        "test_cases": {
+          "positive": [
+            {
+              "description": "Create an estimate from a plain-English job description. The model drafts line items; the server computes subtotal, markup, tax, and total from the user's settings and shows the editable panel.",
+              "prompt": "Write up an estimate for a 6 ft cedar privacy fence, 120 linear feet, with one walk gate, for Dana Lee.",
+              "tools_triggered": "create_estimate",
+              "expected_behavior": "A JobPaper estimate panel opens titled about a cedar fence for Lee, with 3–10 plain-English line items (for example removal, posts, pickets and rails, gate), a computed total, and Download PDF and Copy as text buttons. ChatGPT replies with one line giving the total and 'Tap any line to edit, Download PDF when ready.'"
+            },
+            {
+              "description": "Create a change order that reads the original total from the estimate created earlier in the same conversation.",
+              "prompt": "After the fence estimate: The customer added a second walk gate on the side yard. Change order.",
+              "tools_triggered": "create_change_order",
+              "expected_behavior": "A CO-1 change order panel opens showing the original estimate total (not retyped), the added gate line, the net change including markup and tax, the new contract total, and an Original button that reopens the estimate."
+            },
+            {
+              "description": "Create a daily job report from the user's notes.",
+              "prompt": "End of day report for the Henderson bathroom job: 3 guys, 8 hours, finished demo and hauled out the old tub surround, subfloor is dry and solid, grout color is backordered about a week, tile starts Thursday.",
+              "tools_triggered": "create_job_report",
+              "expected_behavior": "A daily job report panel opens with crew 3, hours 8, the work completed in plain language, the backordered grout under Issues, and 'tile starts Thursday' under Next steps."
+            },
+            {
+              "description": "Save business settings, then confirm they appear on the next estimate.",
+              "prompt": "Set up my business in JobPaper: Ruiz & Sons Remodeling, phone (512) 555-0142, 10% markup, 8.25% sales tax. Then write up an estimate to paint two bedrooms.",
+              "tools_triggered": "settings.update, create_estimate",
+              "expected_behavior": "Settings are saved and confirmed. The painting estimate shows 'Ruiz & Sons Remodeling' and the phone number in the header, with Markup (10%) and Tax (8.25%) rows in the totals."
+            },
+            {
+              "description": "Create a weekly homeowner update.",
+              "prompt": "Weekly update for the homeowner on the Patel kitchen: cabinets installed, countertops templated, plumber set the sink rough-in, waiting on the quartz to be fabricated (about 10 days).",
+              "tools_triggered": "create_job_report",
+              "expected_behavior": "A weekly job report panel opens (period Weekly) summarizing the work completed, with the quartz wait listed as an issue or next step."
+            }
+          ],
+          "negative": [
+            {
+              "description": "Payments are out of scope. JobPaper must not act; ChatGPT should explain it can't process payments and may offer to write up an estimate instead.",
+              "prompt": "Charge the Hendersons' credit card the $3,000 deposit."
+            },
+            {
+              "description": "A change order needs an estimate to reference. With no estimate in the conversation, ChatGPT should ask one question (which estimate) instead of calling create_change_order.",
+              "prompt": "Make a change order for the Smith job."
+            },
+            {
+              "description": "General questions unrelated to job paperwork should not trigger JobPaper.",
+              "prompt": "What's the best way to remove a stripped screw?"
+            }
+          ]
+        },
+        "commerce": false,
+        "commerce_description": "JobPaper is free. It does not sell products, offer subscriptions, or process payments."
+      },
+      "publication": {
+        "countries": ["US"],
+        "release_notes": "Initial release: estimates, change orders (CO-1, CO-2… linked to the original estimate), and daily/weekly job reports in an editable panel; on-device PDF with a browser download fallback; Copy as text; business settings with logo; file viewer for saved .est.json, .co.json, and .rpt.json files."
+      }
+    }
   }
 }
