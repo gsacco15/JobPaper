@@ -8,17 +8,18 @@
 <tr><th>Data</th><th>Why</th><th>Kept on our servers?</th></tr>
 <tr><td>Job text — descriptions, line items, client name and address you type, notes</td><td>To build the document you asked for</td><td><strong>No.</strong> Processed to build the document and returned to ChatGPT. Not stored or logged.</td></tr>
 <tr><td>Photos you attach to a job report</td><td>To show them in the report and PDF</td><td><strong>No.</strong> JobPaper only receives links to photos you attached. Photos are displayed and placed in the PDF on your device. JobPaper never fetches, searches for, or stores images.</td></tr>
-<tr><td>Business settings — business name, phone, email, logo, default markup, sales tax, payment terms</td><td>To put your details and defaults on every document</td><td><strong>Yes</strong>, until you change or clear them. Stored under a one-way hash of the anonymous user ID ChatGPT provides, so the record isn’t tied to your name or email.</td></tr>
+<tr><td>Business settings — business name, phone, email, logo, default markup, sales tax, payment terms</td><td>To put your details and defaults on every document</td><td><strong>Yes</strong>, until you change or clear them. Stored under a one-way hash of your verified Clerk instance and user identifier. Your settings may themselves contain your business name and contact details.</td></tr>
+<tr><td>Sign-in information and account identifier</td><td>To identify your account and keep each user's business settings separate</td><td><strong>Yes.</strong> Clerk manages sign-in information, sessions, and OAuth grants. JobPaper uses your verified account identifier to select your settings.</td></tr>
 <tr><td>Generated documents</td><td>So you can reopen an estimate and make a change order from it</td><td><strong>No.</strong> Documents are saved as files in your ChatGPT conversation, not on our servers.</td></tr>
 <tr><td>PDFs</td><td>To send to your customer</td><td><strong>No.</strong> PDFs are made on your device.</td></tr>
 </table>
-<p>JobPaper does not collect your precise location, contacts, conversation history, or payment information, and does not use cookies or trackers in the plugin.</p>
+<p>JobPaper does not collect your precise location, device address book, conversation history, or payment information. Clerk may use authentication cookies on its sign-in and account pages. JobPaper does not use advertising trackers in the document panel.</p>
 
 <h2>Who receives it</h2>
-<p>Nobody. JobPaper does not sell, rent, or share your data, and does not use it for advertising or to train models. Business settings are stored with our hosting and database providers only to run the service. ChatGPT itself is operated by OpenAI under OpenAI’s own privacy policy.</p>
+<p>JobPaper does not sell or rent your data or use it for advertising or to train models. Vercel hosts the service, Upstash stores business settings, and Clerk handles sign-in and OAuth access. These providers process the information needed to perform those functions. ChatGPT itself is operated by OpenAI under OpenAI’s own privacy policy.</p>
 
 <h2>Retention and deletion</h2>
-<p>Job text and photos are not retained. Business settings are kept until you clear them in JobPaper’s plugin settings or ask us to delete them at <a href="mailto:support@jobpaperapp.com">support@jobpaperapp.com</a>; we delete them within 30 days of a request. Removing the plugin stops all processing.</p>
+<p>Job text and photos are not retained. Business settings are kept until you clear them in JobPaper’s plugin settings or ask us to delete them at <a href="mailto:support@jobpaperapp.com">support@jobpaperapp.com</a>; we delete them within 30 days of a request. Disconnecting the plugin stops new requests from that connection but does not delete your business settings or Clerk account. Contact us for account deletion.</p>
 
 <h2>Security</h2>
 <p>All traffic uses HTTPS. Settings are stored encrypted at rest by our database provider, keyed by a hashed identifier.</p>

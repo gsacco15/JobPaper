@@ -3,6 +3,7 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { serverOptionsFromEnv } from "./config.js";
 import { handleMcpRequest } from "./http.js";
+import { protectedResourceMetadata } from "./auth.js";
 
 async function toRequest(req: IncomingMessage): Promise<Request> {
   const chunks: Buffer[] = [];
@@ -28,6 +29,10 @@ const port = Number(process.env.PORT ?? 8787);
 createServer(async (req, res) => {
   try {
     const url = new URL(req.url ?? "/", "http://localhost");
+    if (["/.well-known/oauth-protected-resource", "/.well-known/oauth-protected-resource/mcp"].includes(url.pathname)) {
+      if (req.method !== "GET") return send(res, new Response("Method not allowed", { status: 405 }));
+      return send(res, protectedResourceMetadata(options.authentication));
+    }
     if (url.pathname === "/" || url.pathname === "/healthz") {
       return send(res, Response.json({ name: "JobPaper", status: "ok", mcp: "/mcp" }));
     }

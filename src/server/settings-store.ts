@@ -3,8 +3,9 @@ import { completeSettings, type BusinessSettings } from "../shared/settings.js";
 export { completeSettings };
 
 // Business defaults are the only thing JobPaper keeps server-side. They're
-// keyed by a SHA-256 hash of ChatGPT's anonymized user id (_meta["openai/subject"]),
-// so the store never sees who the user is. Job text and photos are never stored.
+// keyed by a SHA-256 hash of the verified Clerk instance and user identity in
+// public deployments. Local/private development still supports host metadata.
+// Job text and photos are never stored.
 
 export interface SettingsStore {
   readonly kind: string;

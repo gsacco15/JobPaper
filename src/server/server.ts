@@ -24,7 +24,8 @@ import {
 import { MAX_LOGO_DATA_URL_LENGTH, type BusinessSettings } from "../shared/settings.js";
 import { formatMoney, formatSignedMoney } from "../shared/totals.js";
 import { modelSummary } from "../shared/text.js";
-import { completeSettings, userKeyFromMeta, type SettingsStore } from "./settings-store.js";
+import { completeSettings, hashUserId, userKeyFromMeta, type SettingsStore } from "./settings-store.js";
+import { JOBPAPER_SCOPE, type McpAuthentication } from "./auth.js";
 
 export const UI_URI = "ui://jobpaper/document-v1";
 export const SERVER_NAME = "jobpaper";
@@ -37,6 +38,10 @@ export interface JobPaperServerOptions {
   iconSvg: string;
   /** Used when the host sends no user id (local development only). */
   devUserId?: string;
+  authentication?: McpAuthentication;
+  /** Set only by the HTTP handler after OAuth verification, never from request metadata. */
+  verifiedUserId?: string;
+  requirePersistentSettings?: boolean;
   /** Extra image origins the panel may load photos from. */
   photoDomains?: string[];
 }
@@ -110,15 +115,32 @@ export function createJobPaperServer(opts: JobPaperServerOptions): McpServer {
   const icon = { src: iconSrc, mimeType: "image/svg+xml", sizes: ["any"] };
   // Entrypoint tools carry an icon; spread so the tool config type accepts it.
   const iconProps = { icons: [icon] };
-  const server = new McpServer({
+  const rawServer = new McpServer({
     name: SERVER_NAME,
     title: "JobPaper",
     version: SERVER_VERSION,
     icons: [icon],
     websiteUrl: "https://jobpaperapp.com",
   });
+  // Apply OAuth metadata to every tool, including extension-generated settings tools.
+  const server = opts.authentication ? new Proxy(rawServer, {
+    get(target, property, receiver) {
+      if (property !== "registerTool") return Reflect.get(target, property, receiver);
+      const registerTool: McpServer["registerTool"] = (name, config, callback) => {
+        const schemes = [{ type: "oauth2", scopes: [JOBPAPER_SCOPE] }];
+        return target.registerTool(name, {
+          ...config,
+          _meta: { ...config._meta, securitySchemes: schemes },
+        }, callback);
+      };
+      return registerTool;
+    },
+  }) : rawServer;
 
   async function userKey(meta: Meta): Promise<string | null> {
+    if (opts.authentication) {
+      return opts.verifiedUserId ? hashUserId(`clerk:${opts.authentication.issuer}:${opts.verifiedUserId}`) : null;
+    }
     return (await userKeyFromMeta(meta)) ?? (opts.devUserId ? `dev:${opts.devUserId}` : null);
   }
 
@@ -129,6 +151,7 @@ export function createJobPaperServer(opts: JobPaperServerOptions): McpServer {
       return completeSettings(await opts.store.get(key));
     } catch (error) {
       console.error("settings read failed", error);
+      if (opts.authentication) throw new Error("Business settings couldn't be loaded. Please try again.");
       return completeSettings(null);
     }
   }

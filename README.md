@@ -27,7 +27,7 @@ ChatGPT model ──drafts line items──▶ create_estimate / create_change_o
 ```
 
 - **No database for documents.** A document travels as a small JSON file in the chat. When it can't be a host file, it lives inside its own `jobpaper://` URI, which the server decodes — so a change order can read the original estimate weeks later with no storage.
-- **The only server-side state is business settings** (name, phone, email, logo, markup, tax, terms), keyed by a SHA-256 hash of ChatGPT's anonymized `openai/subject`. Upstash Redis / Vercel KV over REST; in-memory when not configured.
+- **Business settings** (name, phone, email, logo, markup, tax, terms) are keyed by a SHA-256 hash of the verified Clerk instance and user ID on Vercel. Clerk also manages authentication state. Upstash Redis / Vercel KV stores the settings; Vercel refuses requests if persistent storage is missing. Local development supports host metadata and an in-memory store.
 - **The model never does math.** `src/shared/totals.ts` computes subtotal → markup → tax → total, used by both the server and the panel.
 
 ### Tools
@@ -69,6 +69,8 @@ npm run pdf-samples    # docs/samples/*.pdf
 ### Deploy
 
 **Vercel (default):** import the repo; it runs `npm run build:app`, serves `public/` (landing, privacy, terms, support) and `api/mcp.ts` at `/mcp`. Add an Upstash Redis integration (sets `KV_REST_API_URL` / `KV_REST_API_TOKEN`).
+
+Vercel also requires Clerk OAuth credentials, the `jobpaper` scope, and resource audience support. Follow [the OAuth rollout checklist](docs/AUTHENTICATION.md) before deploying or replacing an existing private connection.
 
 **Cloudflare Workers:** `npm run build:app && npx wrangler deploy`, then set the two KV secrets.
 

@@ -73,7 +73,8 @@ Use real captures from ChatGPT once connected in developer mode. Until then, the
 - [x] Description states the three documents, uses the trigger phrases, no comparative or promotional language (above, and in `.codex-plugin/plugin.json`)
 - [x] All document tools `readOnlyHint: true, destructiveHint: false, openWorldHint: false`, with one-line justifications (above; enforced by `test/server.test.ts`)
 - [x] Minimal inputs: no location lookups, no history, no catch-all (enforced by test)
-- [x] Privacy policy: `public/privacy.html` — data collected, purpose, retention (none server-side except settings), recipients (none), contact
+- [x] Privacy policy: `public/privacy.html` — business settings, Clerk sign-in, service providers, retention and deletion, contact
+- [ ] Complete authenticated account linking and isolation checks in [AUTHENTICATION.md](AUTHENTICATION.md)
 - [ ] Support email live: create `support@jobpaperapp.com` (forwarding to your inbox is fine) — *you*
 - [x] Domain bought: `jobpaperapp.com`
 - [ ] Domain added in Vercel (Settings → Domains) and `https://jobpaperapp.com/mcp` returns `"status":"ok"` — *you*
