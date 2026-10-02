@@ -1,5 +1,7 @@
 # Decisions and platform checks
 
+Public deployments now use Clerk OAuth instead of trusting `openai/subject`. The original v1 decisions below describe the local/private implementation; see [AUTHENTICATION.md](AUTHENTICATION.md) for the production trust boundary and rollout checks.
+
 The v1 spec was written before the OpenAI MCP Extensions spec and the `@openai/mcp-extensions` SDK (v0.1.0) were published. This file records where the build follows the published spec instead, and what still needs to be confirmed in a real ChatGPT client.
 
 ## Where the build differs from the v1 spec
